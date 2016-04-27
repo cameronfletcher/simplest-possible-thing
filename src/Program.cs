@@ -10,7 +10,6 @@
         private readonly dddlib.Persistence.IEventStoreRepository eventStoreRepository;
         private readonly dddlib.Projections.IRepository<int, List<CarItem>> carListRepository;
 
-
         private Application(
             dddlib.Persistence.IEventStoreRepository eventStoreRepository,
             dddlib.Projections.IRepository<int, List<CarItem>> carListRepository)

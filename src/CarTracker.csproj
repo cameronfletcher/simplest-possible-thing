@@ -48,19 +48,23 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="dddlib, Version=0.5.0.0, Culture=neutral, PublicKeyToken=170a2ed9a7ece236, processorArchitecture=MSIL">
-      <HintPath>packages\dddlib.0.5.0-beta14\lib\net45\dddlib.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\dddlib.0.5.0\lib\net45\dddlib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="dddlib.Persistence, Version=0.5.0.0, Culture=neutral, PublicKeyToken=170a2ed9a7ece236, processorArchitecture=MSIL">
-      <HintPath>packages\dddlib.Persistence.0.5.0-beta14\lib\net45\dddlib.Persistence.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\dddlib.Persistence.0.5.0\lib\net45\dddlib.Persistence.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="dddlib.Persistence.EventDispatcher, Version=0.5.0.0, Culture=neutral, PublicKeyToken=170a2ed9a7ece236, processorArchitecture=MSIL">
-      <HintPath>packages\dddlib.Persistence.EventDispatcher.0.5.0-beta14\lib\net45\dddlib.Persistence.EventDispatcher.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\dddlib.Persistence.EventDispatcher.0.5.0\lib\net45\dddlib.Persistence.EventDispatcher.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="dddlib.Projections, Version=0.5.0.0, Culture=neutral, PublicKeyToken=170a2ed9a7ece236, processorArchitecture=MSIL">
-      <HintPath>packages\dddlib.Projections.0.5.0-beta14\lib\net45\dddlib.Projections.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\dddlib.Projections.0.5.0\lib\net45\dddlib.Projections.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
