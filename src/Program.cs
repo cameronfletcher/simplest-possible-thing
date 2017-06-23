@@ -1,39 +1,30 @@
 ﻿namespace CarTracker
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
-    using dddlib;
+    using CarTracker.Model;
+    using CarTracker.Persistence;
+    using CarTracker.Persistence.ReadModel;
+    using CarTracker.Persistence.ReadModel.SqlServer;
+    using CarTracker.Persistence.SqlServer;
 
     public class Application
     {
-        private readonly dddlib.Persistence.IEventStoreRepository eventStoreRepository;
-        private readonly dddlib.Projections.IRepository<int, List<CarItem>> carListRepository;
+        private readonly ICarRepository repository;
+        private readonly ICarReadModelRepository readModelRepository;
 
         private Application(
-            dddlib.Persistence.IEventStoreRepository eventStoreRepository,
-            dddlib.Projections.IRepository<int, List<CarItem>> carListRepository)
+            ICarRepository carRepository,
+            ICarReadModelRepository carReadModelRepository)
         {
-            this.eventStoreRepository = eventStoreRepository;
-            this.carListRepository = carListRepository;
+            this.repository = carRepository;
+            this.readModelRepository = carReadModelRepository;
         }
 
         public static void Main()
         {
             var connectionString = @"Data Source=(localdb)\ProjectsV13;Initial Catalog=CarTracker;Integrated Security=True;";
-            var eventStoreRepository = new dddlib.Persistence.SqlServer.SqlServerEventStoreRepository(connectionString);
-            var carListRepository = new dddlib.Projections.Memory.MemoryRepository<int, List<CarItem>>();
-
-            var view = new CarListView(carListRepository);
-            var bus = new Microbus().AutoRegister(view);
-
-            using (new dddlib.Persistence.EventDispatcher.SqlServer.SqlServerEventDispatcher(
-                connectionString,
-                (sequenceNumber, @event) => bus.Send(@event),
-                Guid.NewGuid()))
-            {
-                new Application(eventStoreRepository, carListRepository).Run();
-            }
+            new Application(new CarRepository(connectionString), new CarReadModelRepository(connectionString)).Run();
         }
 
         public void Run()
@@ -76,10 +67,10 @@
                 case "list":
 
                     // list cars
-                    var carList = this.carListRepository.Get(0) ?? new List<CarItem>();
+                    var carList = this.readModelRepository.GetCars();
                     foreach (var car in carList)
                     {
-                        Console.WriteLine("{0}: {1:G}km", car.Registration, car.TotalDistanceDriven);
+                        Console.WriteLine("{0}: {1:G}km", car.Registration, car.TotalDistanceTravelled);
                     }
 
                     break;
@@ -92,7 +83,7 @@
                     }
 
                     // register car: commandParts[1]
-                    this.eventStoreRepository.Save(new Car(commandParts[1]));
+                    this.repository.Save(new Car(commandParts[1]));
 
                     Console.WriteLine("Registered {0}.", commandParts[1]);
                     break;
@@ -112,9 +103,9 @@
                     }
 
                     // drive car: commandParts[1] distance
-                    var carToDrive = this.eventStoreRepository.Load<Car>(commandParts[1]);
+                    var carToDrive = this.repository.Load(commandParts[1]);
                     carToDrive.Drive(distance);
-                    this.eventStoreRepository.Save(carToDrive);
+                    this.repository.Save(carToDrive);
 
                     Console.WriteLine("Drove {0} a distance of {1:G}km.", commandParts[1], distance);
                     break;
@@ -127,10 +118,10 @@
                     }
 
                     // scrap car: commandParts[1]
-                    var carToScrap = this.eventStoreRepository.Load<Car>(commandParts[1]);
+                    var carToScrap = this.repository.Load(commandParts[1]);
                     carToScrap.Scrap();
 
-                    this.eventStoreRepository.Save(carToScrap);
+                    this.repository.Save(carToScrap);
 
                     Console.WriteLine("Scrapped {0}.", commandParts[1]);
                     break;
@@ -143,105 +134,5 @@
                     break;
             }
         }
-    }
-
-    public class CarItem
-    {
-        public string Registration { get; set; }
-
-        public int TotalDistanceDriven { get; set; }
-    }
-
-    public class CarListView
-    {
-        private readonly dddlib.Projections.IRepository<int, List<CarItem>> repository;
-
-        public CarListView(dddlib.Projections.IRepository<int, List<CarItem>> repository)
-        {
-            Guard.Against.Null(() => repository);
-
-            this.repository = repository;
-        }
-
-        public void Consume(CarRegistered @event)
-        {
-            var carList = this.repository.Get(0) ?? new List<CarItem>();
-            carList.Add(new CarItem { Registration = @event.Registration });
-            this.repository.AddOrUpdate(0, carList);
-        }
-
-        public void Consume(CarDriven @event)
-        {
-            var carList = this.repository.Get(0);
-            var car = carList.Single(item => item.Registration == @event.Registration);
-            car.TotalDistanceDriven += @event.Distance;
-            this.repository.AddOrUpdate(0, carList);
-        }
-
-        public void Consume(CarScrapped @event)
-        {
-            var carList = this.repository.Get(0);
-            carList.RemoveAll(item => item.Registration == @event.Registration);
-            this.repository.AddOrUpdate(0, carList);
-        }
-    }
-
-    public class Car : AggregateRoot
-    {
-        protected internal Car()
-        {
-        }
-
-        public Car(string registration)
-        {
-            Guard.Against.Null(() => registration);
-
-            this.Apply(new CarRegistered { Registration = registration });
-        }
-
-        [NaturalKey]
-        public string Registration { get; private set; }
-
-        public void Drive(int distance)
-        {
-            if (distance < 0)
-            {
-                throw new BusinessException("Cannot drive a negative distance.");
-            }
-
-            this.Apply(new CarDriven { Registration = this.Registration, Distance = distance });
-        }
-
-        public void Scrap()
-        {
-            this.Apply(new CarScrapped { Registration = this.Registration });
-        }
-
-        private void Handle(CarRegistered @event)
-        {
-            this.Registration = @event.Registration;
-        }
-
-        private void Handle(CarScrapped @event)
-        {
-            this.EndLifecycle();
-        }
-    }
-
-    public class CarRegistered
-    {
-        public string Registration { get; set; }
-    }
-
-    public class CarDriven
-    {
-        public string Registration { get; set; }
-
-        public int Distance { get; set; }
-    }
-
-    public class CarScrapped
-    {
-        public string Registration { get; set; }
     }
 }
