@@ -4,9 +4,9 @@
     using System.Data;
     using System.Data.SqlClient;
     using System.Linq;
+    using System.Threading.Tasks;
     using CarTracker.Model;
 
-    // TODO (Cameron): Async.
     public sealed class CarRepository : ICarRepository
     {
         private const string DatabaseName = "Cars";
@@ -20,7 +20,7 @@
             this.schema = schema;
         }
 
-        public void Save(Car car)
+        public async Task SaveAsync(Car car)
         {
             Guard.Against.Null(() => car);
 
@@ -37,11 +37,11 @@
                 command.Parameters.Add("@__State", SqlDbType.VarChar, 8).Value = (object)memento.State ?? DBNull.Value;
                 command.Parameters.Add("@__StateOut", SqlDbType.VarChar, 8).Direction = ParameterDirection.Output;
 
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
 
                 try
                 {
-                    command.ExecuteNonQuery();
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
                 catch (SqlException ex) when (ex.Errors.Cast<SqlError>().Any(sqlError => sqlError.Number == 50409))
                 {
@@ -59,7 +59,7 @@
             }
         }
 
-        public Car Load(string registration)
+        public async Task<Car> LoadAsync(string registration)
         {
             Guard.Against.Null(() => registration);
 
@@ -70,11 +70,11 @@
                 command.CommandText = $"{this.schema}.LoadCar";
                 command.Parameters.Add("@Registration", SqlDbType.VarChar, 50).Value = registration;
 
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
 
-                using (var reader = command.ExecuteReader())
+                using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                 {
-                    if (!reader.Read())
+                    if (!await reader.ReadAsync().ConfigureAwait(false))
                     {
                         throw new PersistenceException($"Cannot find any car with registration '{registration}'.");
                     }

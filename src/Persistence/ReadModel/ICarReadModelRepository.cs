@@ -1,9 +1,10 @@
 ﻿namespace CarTracker.Persistence.ReadModel
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     public interface ICarReadModelRepository
     {
-        IEnumerable<CarItem> GetCars();
+        Task<List<CarItem>> GetCarsAsync();
     }
 }

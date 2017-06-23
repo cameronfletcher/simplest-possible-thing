@@ -1,0 +1,4 @@
+﻿web API
+website GUI
+tests
+logging

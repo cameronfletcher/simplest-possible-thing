@@ -1,6 +1,6 @@
 ﻿namespace CarTracker.Model
 {
-    // NOTE (Cameron): This has to be visible to the repository layer. For full seperation of concerns introduce a public facory type that has visibility.
+    // NOTE (Cameron): This has to be visible to the repository layer. For full seperation of concerns a public facory type could be introduced.
     public partial class Car
     {
         private string state;

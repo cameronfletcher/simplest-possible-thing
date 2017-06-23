@@ -1,11 +1,12 @@
 ﻿namespace CarTracker.Persistence
 {
+    using System.Threading.Tasks;
     using CarTracker.Model;
 
     public interface ICarRepository
     {
-        void Save(Car car);
+        Task SaveAsync(Car car);
 
-        Car Load(string registration);
+        Task<Car> LoadAsync(string registration);
     }
 }

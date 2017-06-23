@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
+    using System.Threading.Tasks;
     using CarTracker.Persistence.ReadModel;
 
     // TODO (Cameron): Async.
@@ -19,7 +20,7 @@
             this.schema = schema;
         }
 
-        public IEnumerable<CarItem> GetCars()
+        public async Task<List<CarItem>> GetCarsAsync()
         {
             using (var connection = this.GetConnection())
             using (var command = connection.CreateCommand())
@@ -27,18 +28,23 @@
                 command.CommandType = CommandType.StoredProcedure;
                 command.CommandText = $"{this.schema}.GetCars";
 
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
 
-                using (var reader = command.ExecuteReader())
+                using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                 {
-                    while (reader.Read())
+                    var cars = new List<CarItem>();
+
+                    while (await reader.ReadAsync().ConfigureAwait(false))
                     {
-                        yield return new CarItem
-                        {
-                            Registration = reader.GetString(0),
-                            TotalDistanceTravelled = reader.GetInt32(1),
-                        };
+                        cars.Add(
+                            new CarItem
+                            {
+                                Registration = reader.GetString(0),
+                                TotalDistanceTravelled = reader.GetInt32(1),
+                            });
                     }
+
+                    return cars;
                 }
             }
         }

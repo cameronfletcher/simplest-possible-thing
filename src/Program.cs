@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using System.Threading.Tasks;
     using CarTracker.Model;
     using CarTracker.Persistence;
     using CarTracker.Persistence.ReadModel;
@@ -24,10 +25,13 @@
         public static void Main()
         {
             var connectionString = @"Data Source=(localdb)\ProjectsV13;Initial Catalog=CarTracker;Integrated Security=True;";
-            new Application(new CarRepository(connectionString), new CarReadModelRepository(connectionString)).Run();
+            var application = new Application(new CarRepository(connectionString), new CarReadModelRepository(connectionString));
+
+            Task.Run(async () => await application.Run()).GetAwaiter().GetResult();
+
         }
 
-        public void Run()
+        public async Task Run()
         {
             Console.WriteLine("Car Tracker");
 
@@ -36,7 +40,7 @@
             {
                 try
                 {
-                    this.Handle(command);
+                    await this.Handle(command);
                 }
                 catch (Exception ex)
                 {
@@ -50,7 +54,7 @@
             Console.WriteLine("Goodbye!");
         }
 
-        private void Handle(string command)
+        private async Task Handle(string command)
         {
             var commandParts = command.Split(new[] { ' ' });
             switch (commandParts.First().ToLowerInvariant())
@@ -67,7 +71,7 @@
                 case "list":
 
                     // list cars
-                    var carList = this.readModelRepository.GetCars();
+                    var carList = await this.readModelRepository.GetCarsAsync();
                     foreach (var car in carList)
                     {
                         Console.WriteLine("{0}: {1:G}km", car.Registration, car.TotalDistanceTravelled);
@@ -83,7 +87,7 @@
                     }
 
                     // register car: commandParts[1]
-                    this.repository.Save(new Car(commandParts[1]));
+                    await this.repository.SaveAsync(new Car(commandParts[1]));
 
                     Console.WriteLine("Registered {0}.", commandParts[1]);
                     break;
@@ -103,9 +107,9 @@
                     }
 
                     // drive car: commandParts[1] distance
-                    var carToDrive = this.repository.Load(commandParts[1]);
+                    var carToDrive = await this.repository.LoadAsync(commandParts[1]);
                     carToDrive.Drive(distance);
-                    this.repository.Save(carToDrive);
+                    await this.repository.SaveAsync(carToDrive);
 
                     Console.WriteLine("Drove {0} a distance of {1:G}km.", commandParts[1], distance);
                     break;
@@ -118,10 +122,10 @@
                     }
 
                     // scrap car: commandParts[1]
-                    var carToScrap = this.repository.Load(commandParts[1]);
+                    var carToScrap = await this.repository.LoadAsync(commandParts[1]);
                     carToScrap.Scrap();
 
-                    this.repository.Save(carToScrap);
+                    await this.repository.SaveAsync(carToScrap);
 
                     Console.WriteLine("Scrapped {0}.", commandParts[1]);
                     break;
